@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/python2
 import sys
+import time
+import timeit
 
-def acha_o_maior(mochila,j):
+def acha_o_maior(j):
     global ordenado1
     if j>= len(ordenado1):
         return -1
-
     maior = ordenado1[j][1]
     return maior
 
@@ -18,12 +19,20 @@ def maximizador(lista):
         soma = soma + pesos[i]*lista[i]
     return soma
 
-def achaproibido(item):
+def par_proibido(item,mochila):
+    achou = False
     global duplas
-    for i in range(0,len(duplas),2):
-        if duplas[i]==item:
-                return duplas[i+1]
-    return 0
+    for i in range(0,len(duplas)):
+        if duplas[i] ==item:
+            if(i%2==0):
+                for j in range(0,len(mochila)):
+                    if mochila[j]== duplas[i+1]:
+                        achou =True
+            else:
+                for j in range(0,len(mochila)):
+                    if mochila[j]== duplas[i-1]:
+                        achou =True
+    return achou
 
 def itensmochila(item,mochila,lista):
     global c
@@ -38,8 +47,8 @@ def itensmochila(item,mochila,lista):
         if lista[item-1] == 3:
             return True
         if valores_itens[item-1]>c:
-            return True 
-        if (lista_escolhidos[mochila[i]-1][2] == item) or (mochila[i] == lista_escolhidos[item-1][2]):
+            return True
+        if (par_proibido(item,mochila)):
             return True
     return False
 
@@ -74,11 +83,13 @@ def create_results(mochila):
 
     return result
 
-def branch_create(lista,maior,z):
-    z=z+1
-
+def branch_create(lista):
+    global nos,integros,limitados,inviaveis
+    nos=nos+1
+    mochila=list()
     mochila = create_mochila(lista)
     if mochila == -1:
+        inviaveis=inviaveis+1
         return -1
     i = tamanho_mochila(mochila)
     result = create_results(mochila)
@@ -92,10 +103,10 @@ def branch_create(lista,maior,z):
     maximo = list()
     
     while True:
-        item = acha_o_maior(mochila,j)
+        item = acha_o_maior(j)
         j = j+1
         while(itensmochila(item,mochila,lista) or valores_itens[item-1]>c and item!= -1):
-            item = acha_o_maior(mochila,j)
+            item = acha_o_maior(j)
             j=j+1
         if item == -1:
                 break
@@ -121,21 +132,27 @@ def branch_create(lista,maior,z):
     if(i==c):
         if limitador[0] < maximo[0]:
            limitador = list(maximo)
+        integros=integros+1
         return limitador
-    if maximo[0] <= limitador[0] and not branch:
+    if maximo[0] < limitador[0] and not branch:
+        limitados=limitados+1
         return limitador
     if(item == -1):
         if limitador[0] < maximo[0]:
            limitador = list(maximo)
+        integros=integros+1
         return maximo
     if(branch):
        if limitador[0]>= maximo[0]:
+           limitados=limitados+1
            return limitador
-       a = branch_create(branch_fix1,maximo,z)
-       b = branch_create(branch_fix0,maximo,z)
+       a = branch_create(branch_fix1)
+       b = branch_create(branch_fix0)
        if a>b:
+           integros= integros+1
            return a
        else:
+           integros= integros+1
            return b
 
 # tratamento de entradas
@@ -145,21 +162,35 @@ pesos = map(int, sys.stdin.readline().split())
 duplas = map(int, sys.stdin.read().split())
 lista_escolhidos = list()
 limitador = [0]
-item = [0]*3
+item = [0]*2
+nos = 0
+integros = 0
+inviaveis = 0
+limitados = 0 
 
 for i in range(0,n):
     item[0]= pesos[i]/float(valores_itens[i])
     item[1]= i+1
-    item[2]= achaproibido(i+1)
     lista_escolhidos.append(item[:])
 
 ordenado1 = sorted(lista_escolhidos, key= lambda item : item[0],reverse=True)
-bolsa_final = branch_create([0]*n,0,0)
+ini = timeit.default_timer()
+bolsa_final = branch_create([0]*n)
+fim = timeit.default_timer()
+
 print(bolsa_final[0])
+tempo_total = fim-ini
+#tratamento da saida
 if bolsa_final[0]>0:
     bolsa_final[1] = sorted(bolsa_final[1])
 
 saida= str()
-for itens in bolsa_final[1]:
-    saida = saida+str(itens)+" "
+if len(bolsa_final)>1:
+    for itens in bolsa_final[1]:
+        saida = saida+str(itens)+" "
 print(saida)
+#erro com numero de nos e o tempo de execuvao
+erro=str()
+erro="numero de nos :"+ str(nos)+"\n"+"tempo total de execução: "+str(tempo_total)
+sys.stderr.write(erro)
+print >> sys.stderr, "Error Detected!"
