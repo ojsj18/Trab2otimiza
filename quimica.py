@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/python2
+# -*- coding: utf-8 -*-
 import sys
 import time
 import timeit
@@ -193,4 +193,3 @@ print(saida)
 erro=str()
 erro="numero de nos :"+ str(nos)+"\n"+"tempo total de execução: "+str(tempo_total)
 sys.stderr.write(erro)
-print >> sys.stderr, "Error Detected!"
